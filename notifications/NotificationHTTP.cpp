@@ -4,6 +4,7 @@
 #include "../httpclient/HTTPClient.h"
 #include "../httpclient/UrlEncode.h"
 #include "../main/SQLHelper.h"
+#include "../main/Logger.h"
 
 extern std::string szUserDataFolder;
 
@@ -73,6 +74,11 @@ bool CNotificationHTTP::SendMessageImplementation(const std::string &Subject, co
 			m_sql.AddTaskItem(_tTaskItem::ExecuteScript(1, scriptname, scriptparams));
 			bRet = true;
 		}
+	}
+	else if (destURL.find("event://") == 0)
+	{
+		// TODO: implement
+		_log.Log(LOG_STATUS,"TODO: implements event:// URI support (NotificationHTTP)");
 	}
 	return bRet;
 }

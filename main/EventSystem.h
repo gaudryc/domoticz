@@ -70,6 +70,7 @@ public:
 	void WWWUpdateSecurityState(int securityStatus);
 	void WWWGetItemStates(std::vector<_tDeviceStatus> &iStates);
 	void SetEnabled(const bool bEnabled);
+	void ProcessActions(const std::string & commands, const std::string & eventName);
 private:
 	//lua_State	*m_pLUA;
 	bool m_bEnabled;

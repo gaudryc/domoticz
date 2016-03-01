@@ -16,6 +16,7 @@
 #include "WebServer.h"
 #include "../webserver/cWebem.h"
 #include "../json/json.h"
+#include <boost/algorithm/string.hpp>
 
 #ifdef WIN32
 #include "dirent_windows.h"
@@ -1854,6 +1855,29 @@ std::string CEventSystem::ParseBlocklyString(const std::string &oString)
 	}
 
 	return retString;
+}
+
+void CEventSystem::ProcessActions(const std::string & commands, const std::string & eventName) {
+	std::stringstream sstr;
+	std::vector<std::string> commandArray;
+	boost::split(commandArray, commands, boost::is_any_of(","), boost::token_compress_on);
+	std::string command;
+	for (size_t i = 0; i < commandArray.size(); i++) {
+		command = commandArray[i];
+		command = stdstring_trim(command);
+		if (command == "") {
+			continue; // ignore empty command
+		}
+		if (i > 0) {
+			sstr << ",";
+		}
+		sstr << command;
+	}
+	std::string actions = sstr.str();
+	if (!actions.empty()) {
+		_log.Log(LOG_STATUS, "receive event '%s' and parse blockly actions '%s'", eventName.c_str(), actions.c_str());
+		parseBlocklyActions(actions, eventName, -1L);
+	}
 }
 
 bool CEventSystem::parseBlocklyActions(const std::string &Actions, const std::string &eventName, const unsigned long long eventID)

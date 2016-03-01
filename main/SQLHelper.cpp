@@ -6246,6 +6246,11 @@ bool CSQLHelper::HandleOnOffAction(const bool bIsOn, const std::string &OnAction
 				AddTaskItem(_tTaskItem::ExecuteScript(1,scriptname,scriptparams));
 			}
 		}
+		else if (OnAction.find("event://") == 0)
+		{
+			std::string commands = OnAction.substr(8);
+			m_mainworker.m_eventsystem.ProcessActions(commands, "handle_on_off_action(on)");
+		}
 	}
 	else
 	{
@@ -6276,6 +6281,10 @@ bool CSQLHelper::HandleOnOffAction(const bool bIsOn, const std::string &OnAction
 			{
 				AddTaskItem(_tTaskItem::ExecuteScript(1,scriptname,scriptparams));
 			}
+		}
+		else if (OffAction.find("event://") == 0) {
+			std::string commands = OffAction.substr(8);
+			m_mainworker.m_eventsystem.ProcessActions(commands, "handle_on_off_action(off)");
 		}
 	}
 	return true;
