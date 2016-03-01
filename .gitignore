@@ -16,3 +16,7 @@ Config/zwscene.xml
 backups/
 domocookie.txt
 domoticz.exe
+/.cproject
+/.project
+/Debug
+/Release
