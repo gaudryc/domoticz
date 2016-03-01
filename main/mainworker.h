@@ -12,6 +12,7 @@
 #include "DataPush.h"
 #include "HttpPush.h"
 #include "concurrent_queue.h"
+#include <boost/atomic.hpp>
 #include "../webserver/server_settings.hpp"
 
 enum eVerboseLevel
@@ -196,8 +197,8 @@ private:
 	unsigned char get_BateryLevel(const _eHardwareTypes HwdType, bool bIsInPercentage, unsigned char level);
 
 	// RxMessage queue resources
-	volatile bool m_stopRxMessageThread;
-	volatile unsigned long m_rxMessageIdx;
+	boost::atomic<bool> m_stopRxMessageThread;
+	boost::atomic<unsigned long> m_rxMessageIdx;
 	boost::shared_ptr<boost::thread> m_rxMessageThread;
 	void Do_Work_On_Rx_Messages();
 	struct _tRxQueueItem {

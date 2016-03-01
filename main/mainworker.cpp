@@ -1749,6 +1749,9 @@ void MainWorker::CheckAndPushRxMessage(const CDomoticzHardwareBase *pHardware, c
 	rxMessage.trigger = NULL; // Should be initialized to NULL if trigger is no used
 	if (wait) { // add trigger to wait for the message to be processed
 		rxMessage.trigger = new queue_element_trigger();
+#ifdef DEBUG_RXQUEUE
+			_log.Log(LOG_STATUS, "RxQueue: add trigger for rxMessage(%lu)", rxMessage.rxMessageIdx);
+#endif
 	}
 
 #ifdef DEBUG_RXQUEUE
