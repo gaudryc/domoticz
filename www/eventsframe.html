@@ -295,6 +295,9 @@
       	var setArray = [];
       	var doBlock = $($(xml).find("statement[name='DO"+pairId+"']")[0]);
  	      $(doBlock).find('block').each (function(){ 
+			if ($(this).attr('disabled') === 'disabled') {
+				return;
+			}
 	      	if ($(this).attr('type') == 'logic_set') {
 		   		var valueA = $(this).find("value[name='A']")[0];
 	        	var titleA = $(valueA).find("title")[0];
