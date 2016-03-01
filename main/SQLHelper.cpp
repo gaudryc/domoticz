@@ -3194,9 +3194,8 @@ unsigned long long CSQLHelper::UpdateValueInt(const int HardwareID, const char* 
 					if (nszUserDataFolder == "")
 						nszUserDataFolder = ".";
 					s_scriptparams << nszUserDataFolder << " " << HardwareID << " " << ulID << " " << (bIsLightSwitchOn ? "On" : "Off") << " \"" << lstatus << "\"" << " \"" << devname << "\"";
-					//add script to background worker				
-					boost::lock_guard<boost::mutex> l(m_background_task_mutex);
-					m_background_task_queue.push_back(_tTaskItem::ExecuteScript(1, scriptname, s_scriptparams.str()));
+					//add script to background worker
+					AddTaskItem(_tTaskItem::ExecuteScript(1, scriptname, s_scriptparams.str()));
 				}
 			}
 
