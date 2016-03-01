@@ -1678,7 +1678,7 @@ define(['app'], function (app) {
 						bValid = bValid && checkLength(selectorAction$, 0, 200);
 						bValid = bValid && ((levelAction === '') ||
 								(((levelAction.toLowerCase().indexOf('http://') === 0) && (levelAction.length > 7)) ||
-									((levelAction.toLowerCase().indexOf('https://') === 0) && (levelAction.length > 8)) ||
+								((levelAction.toLowerCase().indexOf('https://') === 0) && (levelAction.length > 8)) ||
 								((levelAction.toLowerCase().indexOf('script://') === 0) && (levelAction.length > 9)) ||
 								((levelAction.toLowerCase().indexOf('event://') === 0) && (levelAction.length > 8))));
 						if (bValid) {
