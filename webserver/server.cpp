@@ -74,7 +74,8 @@ void server_base::run() {
 
 /// Ask the server to stop using asynchronous command
 void server_base::stop() {
-	handle_stop();
+	// Post a call to the stop function so that server_base::stop() is safe to call from any thread.
+	io_service_.post(boost::bind(&server_base::handle_stop, this));
 }
 
 /// Returns true if the server is stopped.
@@ -90,7 +91,8 @@ void server_base::handle_stop() {
 	} catch (...) {
 		_log.Log(LOG_ERROR, "[web:%s] exception occurred while closing acceptor", settings_.listening_port.c_str());
 	}
-	connection_manager_.stop_all(false);
+	connection_manager_.stop_all(true);
+	is_stopping = false;
 }
 
 server::server(const server_settings & settings, request_handler & user_request_handler) :
