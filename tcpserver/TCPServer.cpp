@@ -343,6 +343,7 @@ bool CTCPServer::StartServer(const std::string &address, const std::string &port
 			if (m_pTCPServer != NULL) {
 				_log.Log(LOG_ERROR, "Stopping TCPServer should delete resources !");
 			}
+			boost::unique_lock<boost::shared_mutex> lock(m_server_mutex);
 			m_pTCPServer = new CTCPServerInt(listen_address, port, this);
 		}
 		catch (std::exception& e)
@@ -388,7 +389,7 @@ bool CTCPServer::StartServer(boost::shared_ptr<http::server::CProxyClient> proxy
 
 void CTCPServer::StopServer()
 {
-	boost::lock_guard<boost::mutex> l(m_server_mutex);
+	boost::unique_lock<boost::shared_mutex> lock(m_server_mutex);
 	if (m_pTCPServer) {
 		m_pTCPServer->stop();
 	}
@@ -410,6 +411,9 @@ void CTCPServer::StopServer()
 
 void CTCPServer::Do_Work()
 {
+	// IMPORTANT : The CTCPServerInt::start method does not return now (only when the server is stopped).
+	// So do not lock m_server_mutex here, otherwise the write lock can not be performed (the stopServer
+	// function will NOT be able to lock before stopping the server).
 	if (m_pTCPServer) {
 		_log.Log(LOG_STATUS, "TCPServer: shared server started...");
 		m_pTCPServer->start();
@@ -418,7 +422,7 @@ void CTCPServer::Do_Work()
 
 void CTCPServer::SendToAll(const unsigned long long DeviceRowID, const char *pData, size_t Length, const CTCPClientBase* pClient2Ignore)
 {
-	boost::lock_guard<boost::mutex> l(m_server_mutex);
+	boost::shared_lock<boost::shared_mutex> lock(m_server_mutex);
 	if (m_pTCPServer)
 		m_pTCPServer->SendToAll(DeviceRowID, pData, Length, pClient2Ignore);
 #ifndef NOCLOUD
@@ -429,7 +433,7 @@ void CTCPServer::SendToAll(const unsigned long long DeviceRowID, const char *pDa
 
 void CTCPServer::SetRemoteUsers(const std::vector<_tRemoteShareUser> &users)
 {
-	boost::lock_guard<boost::mutex> l(m_server_mutex);
+	boost::shared_lock<boost::shared_mutex> lock(m_server_mutex);
 	if (m_pTCPServer)
 		m_pTCPServer->SetRemoteUsers(users);
 #ifndef NOCLOUD
@@ -440,7 +444,7 @@ void CTCPServer::SetRemoteUsers(const std::vector<_tRemoteShareUser> &users)
 
 unsigned int CTCPServer::GetUserDevicesCount(const std::string &username)
 {
-	boost::lock_guard<boost::mutex> l(m_server_mutex);
+	boost::shared_lock<boost::shared_mutex> lock(m_server_mutex);
 	if (m_pTCPServer) {
 		return m_pTCPServer->GetUserDevicesCount(username);
 	}
@@ -454,6 +458,7 @@ unsigned int CTCPServer::GetUserDevicesCount(const std::string &username)
 
 void CTCPServer::stopAllClients()
 {
+	boost::shared_lock<boost::shared_mutex> lock(m_server_mutex);
 	if (m_pTCPServer)
 		m_pTCPServer->stopAllClients();
 #ifndef NOCLOUD
