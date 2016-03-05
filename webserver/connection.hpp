@@ -130,6 +130,15 @@ private:
   /// Ask the connection to stop as soon as possible
   bool stop_required;
 
+  /// The default number of request to handle with the connection when keep-alive is enabled
+  unsigned int default_max_requests_;
+  /// The number of requests already handled with the connection
+  unsigned int request_count_;
+  /// Increment the request count for this connection
+  void add_request();
+  /// Return true if the current request is the last request to handle with the current connection
+  bool last_request();
+
   // secure connection members below
   // secure connection yes/no
   bool secure_;

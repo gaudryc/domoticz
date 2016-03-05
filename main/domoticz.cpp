@@ -73,12 +73,19 @@ const char *szHelp=
 	"Usage: Domoticz -www port -verbose x\n"
 	"\t-www port (for example -www 8080, or -www 0 to disable http)\n"
 	"\t-wwwbind address (for example -wwwbind 0.0.0.0 or -wwwbind 192.168.0.20)\n"
+	"\t-wwwgracefulstop boolean (for example -wwwgracefulstop true, default is false)\n"
 #ifdef WWW_ENABLE_SSL
 	"\t-sslwww port (for example -sslwww 443, or -sslwww 0 to disable https)\n"
-	"\t-sslcert file_path (for example /opt/domoticz/server_cert.pem)\n"
+	"\t-sslcert file_path (for example /opt/domoticz/server_cert.pem, default is ./server.pem)\n"
 	"\t-sslpass passphrase (to access to server private key in certificate)\n"
-	"\t-sslmethod method (for SSL method)\n"
+	"\t-sslmethod method (for SSL method, default is sslv23)\n"
+	"\t                  (valid values are : tlsv1, tlsv1_server, sslv23, sslv23_server, tlsv11, tlsv11_server, tlsv12 and tlsv12_server)\n"
 	"\t-ssloptions options (for SSL options, default is 'default_workarounds,no_sslv2,single_dh_use')\n"
+#if (BOOST_VERSION > 105900)
+	"\t                    (valid values are : default_workarounds, no_sslv2, no_sslv3, no_tlsv1, no_tlsv1_1, no_tlsv1_2, single_dh_use and no_compression)\n"
+#else
+	"\t                    (valid values are : default_workarounds, no_sslv2, no_sslv3, no_tlsv1, single_dh_use and no_compression)\n"
+#endif
 	"\t-ssldhparam file_path (for SSL DH parameters)\n"
 #endif
 #if defined WIN32
@@ -609,6 +616,18 @@ int main(int argc, char**argv)
 		std::string wwwport = cmdLine.GetSafeArgument("-www", 0, "");
 		webserver_settings.listening_port = wwwport;
 	}
+
+	if (cmdLine.HasSwitch("-wwwgracefulstop"))
+	{
+		if (cmdLine.GetArgumentCount("-wwwgracefulstop") != 1)
+		{
+			_log.Log(LOG_ERROR, "Please specify true or false to the wwwgracefulstop argument.");
+			return 1;
+		}
+		std::string wwwgracefulstop = cmdLine.GetSafeArgument("-wwwgracefulstop", 0, "false");
+		bool gracefulstop = wwwgracefulstop.compare("true") == 0 ? true : false;
+		webserver_settings.graceful_stop = gracefulstop;
+	}
 	m_mainworker.SetWebserverSettings(webserver_settings);
 #ifdef WWW_ENABLE_SSL
 	http::server::ssl_server_settings secure_webserver_settings;
@@ -626,6 +645,7 @@ int main(int argc, char**argv)
 		// Secure listening address has to be equal
 		secure_webserver_settings.listening_address = webserver_settings.listening_address;
 	}
+	secure_webserver_settings.graceful_stop = webserver_settings.graceful_stop;
 	if (cmdLine.HasSwitch("-sslcert"))
 	{
 		if (cmdLine.GetArgumentCount("-sslcert") != 1)

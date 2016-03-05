@@ -33,7 +33,9 @@ connection::connection(boost::asio::io_service& io_service,
 				stop_required(false),
 				reply_(reply::stock_reply(reply::internal_server_error)),
 				default_abandoned_timeout_(20*60), // 20mn before stopping abandoned connection
-				abandoned_timer_(io_service, boost::posix_time::seconds(default_abandoned_timeout_))
+				abandoned_timer_(io_service, boost::posix_time::seconds(default_abandoned_timeout_)),
+				default_max_requests_(20),
+				request_count_(0)
 {
 	secure_ = false;
 	keepalive_ = false;
@@ -58,7 +60,9 @@ connection::connection(boost::asio::io_service& io_service,
 				stop_required(false),
 				reply_(reply::stock_reply(reply::internal_server_error)),
 				default_abandoned_timeout_(20*60), // 20mn before stopping abandoned connection
-				abandoned_timer_(io_service, boost::posix_time::seconds(default_abandoned_timeout_))
+				abandoned_timer_(io_service, boost::posix_time::seconds(default_abandoned_timeout_)),
+				default_max_requests_(20),
+				request_count_(0)
 {
 	secure_ = true;
 	keepalive_ = false;
@@ -191,8 +195,10 @@ void connection::handle_read(const boost::system::error_code& error, std::size_t
 	// data read, no need for timeouts (RK, note: race condition)
 	cancel_read_timeout();
 
-    if (!error && bytes_transferred > 0)
-    {
+	if (!error && bytes_transferred > 0)
+	{
+		add_request();
+
 		// ensure written bytes in the buffer
 		_buf.commit(bytes_transferred);
 		boost::tribool result;
@@ -222,6 +228,14 @@ void connection::handle_read(const boost::system::error_code& error, std::size_t
 				request_.host = request_.host.substr(7);
 			}
 			request_handler_.handle_request(request_, reply_);
+
+			if (request_.keep_alive && ((reply_.status == reply::ok) || (reply_.status == reply::no_content) || (reply_.status == reply::not_modified))) {
+				// Allows request handler to override the header (but it should not)
+				reply::add_header_if_absent(&reply_, "Connection", "Keep-Alive");
+				std::stringstream ss;
+				ss << "max=" << default_max_requests_ << ", timeout=" << read_timeout_;
+				reply::add_header_if_absent(&reply_, "Keep-Alive", ss.str());
+			}
 
 			status = "waiting-write";
 			if (is_stopping()) {
@@ -269,16 +283,17 @@ void connection::handle_read(const boost::system::error_code& error, std::size_t
 			read_more();
 		}
 	}
-    else if (error != boost::asio::error::operation_aborted)
-    {
+	else if (error != boost::asio::error::operation_aborted)
+	{
 		connection_manager_.stop(shared_from_this());
-    }
+	}
 }
 
 void connection::handle_write(const boost::system::error_code& error)
 {
-	if (!error && keepalive_ && !stop_required) {
+	if (!error && keepalive_ && !stop_required && !last_request()) {
 		// if a keep-alive connection is requested, we read the next request
+		reset_abandoned_timeout();
 		read_more();
 	} else {
 		connection_manager_.stop(shared_from_this());
@@ -357,7 +372,7 @@ void connection::reset_abandoned_timeout() {
 /// stop connection on abandoned timeout
 void connection::handle_abandoned_timeout(const boost::system::error_code& error) {
 	if (error != boost::asio::error::operation_aborted) {
-		_log.Log(LOG_STATUS, "%s -> handle abandoned timeout", host_endpoint_.c_str());
+		_log.Log(LOG_STATUS, "%s -> handle abandoned timeout (status=%s)", host_endpoint_.c_str(), status.c_str());
 		connection_manager_.stop(shared_from_this());
 	}
 }
@@ -365,7 +380,9 @@ void connection::handle_abandoned_timeout(const boost::system::error_code& error
 /// Wait for all asynchronous operations to abort.
 void connection::stop_gracefully() {
 	stop_required = true;
-	if ((status.compare("waiting-read") == 0) || (status.compare("waiting-handshake"))) {
+	if ((status.compare("initializing") == 0) ||
+			(status.compare("waiting-read") == 0) ||
+			(status.compare("waiting-handshake") == 0)) {
 		// avoid to wait until timeout
 		connection_manager_.stop(shared_from_this());
 	}
@@ -379,6 +396,20 @@ bool connection::is_stopping() {
 	}
 	return false;
 }
+
+/// Increment the request count for this connection
+void connection::add_request() {
+	request_count_ += 1;
+}
+
+/// Return true if keep-alive is not enable or if the current request is the last request to handle with the current connection
+bool connection::last_request() {
+	if (!keepalive_) {
+		return true;
+	}
+	return request_count_ >= default_max_requests_;
+}
+
 
 } // namespace server
 } // namespace http
