@@ -73,7 +73,6 @@ const char *szHelp=
 	"Usage: Domoticz -www port -verbose x\n"
 	"\t-www port (for example -www 8080, or -www 0 to disable http)\n"
 	"\t-wwwbind address (for example -wwwbind 0.0.0.0 or -wwwbind 192.168.0.20)\n"
-	"\t-wwwgracefulstop boolean (for example -wwwgracefulstop true, default is false)\n"
 #ifdef WWW_ENABLE_SSL
 	"\t-sslwww port (for example -sslwww 443, or -sslwww 0 to disable https)\n"
 	"\t-sslcert file_path (for example /opt/domoticz/server_cert.pem, default is ./server.pem)\n"
@@ -655,7 +654,6 @@ int main(int argc, char**argv)
 		// Secure listening address has to be equal
 		secure_webserver_settings.listening_address = webserver_settings.listening_address;
 	}
-	secure_webserver_settings.graceful_stop = webserver_settings.graceful_stop;
 	if (cmdLine.HasSwitch("-sslcert"))
 	{
 		if (cmdLine.GetArgumentCount("-sslcert") != 1)
