@@ -33,7 +33,7 @@ connection::connection(boost::asio::io_service& io_service,
 				reply_(reply::stock_reply(reply::internal_server_error)),
 				default_abandoned_timeout_(20*60), // 20mn before stopping abandoned connection
 				abandoned_timer_(io_service, boost::posix_time::seconds(default_abandoned_timeout_)),
-				default_max_requests_(20),
+				default_max_requests_(600),
 				request_count_(0)
 {
 	secure_ = false;
@@ -59,7 +59,7 @@ connection::connection(boost::asio::io_service& io_service,
 				reply_(reply::stock_reply(reply::internal_server_error)),
 				default_abandoned_timeout_(20*60), // 20mn before stopping abandoned connection
 				abandoned_timer_(io_service, boost::posix_time::seconds(default_abandoned_timeout_)),
-				default_max_requests_(20),
+				default_max_requests_(600),
 				request_count_(0)
 {
 	secure_ = true;
