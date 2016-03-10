@@ -1119,108 +1119,111 @@ void MainWorker::HandleAutomaticBackups()
 	int nValue=0;
 	if (!m_sql.GetPreferencesVar("UseAutoBackup",nValue))
 		return;
-	if (nValue==1)
-	{
-		std::stringstream backup_DirH;
-		std::stringstream backup_DirD;
-		std::stringstream backup_DirM;
+	if (nValue != 1)
+		return;
+
+	_log.Log(LOG_STATUS, "Starting automatic database backup procedure...");
+
+	std::stringstream backup_DirH;
+	std::stringstream backup_DirD;
+	std::stringstream backup_DirM;
 
 #ifdef WIN32
-		backup_DirH << szUserDataFolder << "backups\\hourly\\";
-		backup_DirD << szUserDataFolder << "backups\\daily\\";
-		backup_DirM << szUserDataFolder << "backups\\monthly\\";
+	backup_DirH << szUserDataFolder << "backups\\hourly\\";
+	backup_DirD << szUserDataFolder << "backups\\daily\\";
+	backup_DirM << szUserDataFolder << "backups\\monthly\\";
 #else
-		backup_DirH << szUserDataFolder << "backups/hourly/";
-		backup_DirD << szUserDataFolder << "backups/daily/";
-		backup_DirM << szUserDataFolder << "backups/monthly/";
+	backup_DirH << szUserDataFolder << "backups/hourly/";
+	backup_DirD << szUserDataFolder << "backups/daily/";
+	backup_DirM << szUserDataFolder << "backups/monthly/";
 #endif
 
-		std::string sbackup_DirH = backup_DirH.str();
-		std::string sbackup_DirD = backup_DirD.str();
-		std::string sbackup_DirM = backup_DirM.str();
+	std::string sbackup_DirH = backup_DirH.str();
+	std::string sbackup_DirD = backup_DirD.str();
+	std::string sbackup_DirM = backup_DirM.str();
 
-		//create folders if they not exists
-		mkdir_deep(sbackup_DirH.c_str(), 0755);
-		mkdir_deep(sbackup_DirD.c_str(), 0755);
-		mkdir_deep(sbackup_DirM.c_str(), 0755);
+	//create folders if they not exists
+	mkdir_deep(sbackup_DirH.c_str(), 0755);
+	mkdir_deep(sbackup_DirD.c_str(), 0755);
+	mkdir_deep(sbackup_DirM.c_str(), 0755);
 
-		time_t now = mytime(NULL);
-		struct tm tm1;
-		localtime_r(&now,&tm1);
-		int hour = tm1.tm_hour;
-		int day = tm1.tm_mday;
-		int month = tm1.tm_mon;
+	time_t now = mytime(NULL);
+	struct tm tm1;
+	localtime_r(&now,&tm1);
+	int hour = tm1.tm_hour;
+	int day = tm1.tm_mday;
+	int month = tm1.tm_mon;
 
-		int lastHourBackup = -1;
-		int lastDayBackup = -1;
-		int lastMonthBackup = -1;
+	int lastHourBackup = -1;
+	int lastDayBackup = -1;
+	int lastMonthBackup = -1;
 
-		m_sql.GetLastBackupNo("Hour", lastHourBackup);
-		m_sql.GetLastBackupNo("Day", lastDayBackup);
-		m_sql.GetLastBackupNo("Month", lastMonthBackup);
+	m_sql.GetLastBackupNo("Hour", lastHourBackup);
+	m_sql.GetLastBackupNo("Day", lastDayBackup);
+	m_sql.GetLastBackupNo("Month", lastMonthBackup);
 
-		DIR *lDir;
-		//struct dirent *ent;
-		if ((lastHourBackup == -1)||(lastHourBackup !=hour)) {
+	DIR *lDir;
+	//struct dirent *ent;
+	if ((lastHourBackup == -1)||(lastHourBackup !=hour)) {
 
-			if ((lDir = opendir(sbackup_DirH.c_str())) != NULL)
-			{
-				std::stringstream sTmp;
-				sTmp << "backup-hour-" << hour << ".db";
+		if ((lDir = opendir(sbackup_DirH.c_str())) != NULL)
+		{
+			std::stringstream sTmp;
+			sTmp << "backup-hour-" << hour << ".db";
 
-				std::string OutputFileName=sbackup_DirH + sTmp.str();
-				if (m_sql.BackupDatabase(OutputFileName)) {
-					m_sql.SetLastBackupNo("Hour", hour);
-				}
-				else {
-					_log.Log(LOG_ERROR,"Error writing automatic hourly backup file");
-				}
-				closedir(lDir);
+			std::string OutputFileName=sbackup_DirH + sTmp.str();
+			if (m_sql.BackupDatabase(OutputFileName)) {
+				m_sql.SetLastBackupNo("Hour", hour);
 			}
 			else {
-				_log.Log(LOG_ERROR,"Error accessing automatic backup directories");
+				_log.Log(LOG_ERROR,"Error writing automatic hourly backup file");
 			}
+			closedir(lDir);
 		}
-		if ((lastDayBackup == -1)||(lastDayBackup !=day)) {
-
-			if ((lDir = opendir(sbackup_DirD.c_str())) != NULL)
-			{
-				std::stringstream sTmp;
-				sTmp << "backup-day-" << day << ".db";
-
-				std::string OutputFileName=sbackup_DirD + sTmp.str();
-				if (m_sql.BackupDatabase(OutputFileName)) {
-					m_sql.SetLastBackupNo("Day", day);
-				}
-				else {
-					_log.Log(LOG_ERROR,"Error writing automatic daily backup file");
-				}
-				closedir(lDir);
-			}
-			else {
-				_log.Log(LOG_ERROR,"Error accessing automatic backup directories");
-			}
-		}
-		if ((lastMonthBackup == -1)||(lastMonthBackup !=month)) {
-			if ((lDir = opendir(sbackup_DirM.c_str())) != NULL)
-			{
-				std::stringstream sTmp;
-				sTmp << "backup-month-" << month+1 << ".db";
-
-				std::string OutputFileName=sbackup_DirM + sTmp.str();
-				if (m_sql.BackupDatabase(OutputFileName)) {
-					m_sql.SetLastBackupNo("Month", month);
-				}
-				else {
-					_log.Log(LOG_ERROR,"Error writing automatic monthly backup file");
-				}
-				closedir(lDir);
-			}
-			else {
-				_log.Log(LOG_ERROR,"Error accessing automatic backup directories");
-			}
+		else {
+			_log.Log(LOG_ERROR,"Error accessing automatic backup directories");
 		}
 	}
+	if ((lastDayBackup == -1)||(lastDayBackup !=day)) {
+
+		if ((lDir = opendir(sbackup_DirD.c_str())) != NULL)
+		{
+			std::stringstream sTmp;
+			sTmp << "backup-day-" << day << ".db";
+
+			std::string OutputFileName=sbackup_DirD + sTmp.str();
+			if (m_sql.BackupDatabase(OutputFileName)) {
+				m_sql.SetLastBackupNo("Day", day);
+			}
+			else {
+				_log.Log(LOG_ERROR,"Error writing automatic daily backup file");
+			}
+			closedir(lDir);
+		}
+		else {
+			_log.Log(LOG_ERROR,"Error accessing automatic backup directories");
+		}
+	}
+	if ((lastMonthBackup == -1)||(lastMonthBackup !=month)) {
+		if ((lDir = opendir(sbackup_DirM.c_str())) != NULL)
+		{
+			std::stringstream sTmp;
+			sTmp << "backup-month-" << month+1 << ".db";
+
+			std::string OutputFileName=sbackup_DirM + sTmp.str();
+			if (m_sql.BackupDatabase(OutputFileName)) {
+				m_sql.SetLastBackupNo("Month", month);
+			}
+			else {
+				_log.Log(LOG_ERROR,"Error writing automatic monthly backup file");
+			}
+			closedir(lDir);
+		}
+		else {
+			_log.Log(LOG_ERROR,"Error accessing automatic backup directories");
+		}
+	}
+	_log.Log(LOG_STATUS, "Ending automatic database backup procedure...");
 }
 
 void MainWorker::ParseRFXLogFile()
@@ -9262,7 +9265,7 @@ void MainWorker::decode_General(const int HwdID, const _eHardwareTypes HwdType, 
 		DevRowIdx=m_sql.UpdateValue(HwdID, ID.c_str(),Unit,devType,subType,SignalLevel,BatteryLevel,pMeter->intval2, procResult.DeviceName);
 		if (DevRowIdx == -1)
 			return;
-		m_notifications.CheckAndHandleNotification(DevRowIdx, procResult.DeviceName,devType, subType, NTYPE_USAGE, (float)pMeter->intval1);
+		m_notifications.CheckAndHandleNotification(DevRowIdx, procResult.DeviceName,devType, subType, NTYPE_USAGE, (float)pMeter->intval2);
 	}
 	else if (subType==sTypeLeafWetness)
 	{
@@ -9325,7 +9328,7 @@ void MainWorker::decode_General(const int HwdID, const _eHardwareTypes HwdType, 
 		DevRowIdx = m_sql.UpdateValue(HwdID, ID.c_str(), Unit, devType, subType, SignalLevel, BatteryLevel, cmnd, szTmp, procResult.DeviceName);
 		if (DevRowIdx == -1)
 			return;
-		m_notifications.CheckAndHandleNotification(DevRowIdx, procResult.DeviceName,devType, subType, NTYPE_RPM, (float)pMeter->intval1);
+		m_notifications.CheckAndHandleNotification(DevRowIdx, procResult.DeviceName,devType, subType, NTYPE_RPM, (float)pMeter->intval2);
 	}
 	else if (subType == sTypeSoundLevel)
 	{
@@ -9333,7 +9336,7 @@ void MainWorker::decode_General(const int HwdID, const _eHardwareTypes HwdType, 
 		DevRowIdx = m_sql.UpdateValue(HwdID, ID.c_str(), Unit, devType, subType, SignalLevel, BatteryLevel, cmnd, szTmp, procResult.DeviceName);
 		if (DevRowIdx == -1)
 			return;
-		m_notifications.CheckAndHandleNotification(DevRowIdx, procResult.DeviceName,devType, subType, NTYPE_RPM, (float)pMeter->intval1);
+		m_notifications.CheckAndHandleNotification(DevRowIdx, procResult.DeviceName,devType, subType, NTYPE_USAGE, (float)pMeter->intval2);
 	}
 	else if (subType == sTypeZWaveClock)
 	{
@@ -10996,13 +10999,13 @@ bool MainWorker::SwitchLight(const unsigned long long idx, const std::string &sw
 {
 	//Get Device details
 	std::vector<std::vector<std::string> > result;
-	result=m_sql.safe_query(
-		"SELECT HardwareID,DeviceID,Unit,Type,SubType,SwitchType,AddjValue,nValue,sValue,Name,Options FROM DeviceStatus WHERE (ID == %llu)",
+	result = m_sql.safe_query(
+		"SELECT HardwareID,DeviceID,Unit,Type,SubType,SwitchType,AddjValue2,nValue,sValue,Name,Options FROM DeviceStatus WHERE (ID == %llu)",
 		idx);
-	if (result.size()<1)
+	if (result.size() < 1)
 		return false;
 
-	std::vector<std::string> sd=result[0];
+	std::vector<std::string> sd = result[0];
 
 	//unsigned char dType = atoi(sd[3].c_str());
 	//unsigned char dSubType = atoi(sd[4].c_str());
@@ -11019,27 +11022,23 @@ bool MainWorker::SwitchLight(const unsigned long long idx, const std::string &sw
 		int nNewVal = bIsOn ? 1 : 0;//Is that everything we need here
 		if ((switchtype == STYPE_Selector) && (nValue == nNewVal) && (level == atoi(sValue.c_str()))) {
 			return true;
-		} else if (nValue == nNewVal) {
+		}
+		else if (nValue == nNewVal) {
 			return true;//FIXME no return code for already set
 		}
 	}
-	if (switchtype == STYPE_Selector) {
-		bIsOn = (level > 0) ? true : false;
-	}
-	int iDelay = bIsOn ? iOnDelay : 0;
-
-	//Check if we have an OnDelay, if yes, add it to the tasker
-	if ((iDelay != 0) || ExtraDelay)
+	//Check if we have an On-Delay, if yes, add it to the tasker
+	if (((bIsOn) && (iOnDelay != 0)) || ExtraDelay)
 	{
 		if (ExtraDelay != 0)
 		{
 			_log.Log(LOG_NORM, "Delaying switch [%s] action (%s) for %d seconds", devName.c_str(), switchcmd.c_str(), ExtraDelay);
 		}
-		m_sql.AddTaskItem(_tTaskItem::SwitchLightEvent(iDelay + ExtraDelay, idx, switchcmd, level, hue, "Switch with Delay"));
+		m_sql.AddTaskItem(_tTaskItem::SwitchLightEvent(iOnDelay + ExtraDelay, idx, switchcmd, level, hue, "Switch with Delay"));
 		return true;
 	}
 	else
-		return SwitchLightInt(sd,switchcmd,level,hue,false);
+		return SwitchLightInt(sd, switchcmd, level, hue, false);
 }
 
 bool MainWorker::SetSetPoint(const std::string &idx, const float TempValue, const int newMode, const std::string &until)
@@ -11991,6 +11990,12 @@ void MainWorker::HeartbeatCheck()
 bool MainWorker::UpdateDevice(const int HardwareID, const std::string &DeviceID, const int unit, const int devType, const int subType, const int nValue, const std::string &sValue, const int signallevel, const int batterylevel, const bool parseTrigger)
 {
 	CDomoticzHardwareBase *pHardware = GetHardware(HardwareID);
+
+	unsigned long ID = 0;
+	std::stringstream s_strid;
+	s_strid << std::hex << DeviceID;
+	s_strid >> ID;
+
 	if (pHardware)
 	{
 		if (devType == pTypeLighting2)
@@ -12019,36 +12024,62 @@ bool MainWorker::UpdateDevice(const int HardwareID, const std::string &DeviceID,
 			lcmd.LIGHTING2.level = (unsigned char)atoi(sValue.c_str());
 			lcmd.LIGHTING2.filler = 0;
 			lcmd.LIGHTING2.rssi = signallevel;
-			DecodeRXMessage(pHardware, (const unsigned char *)&lcmd.LIGHTING2, NULL, -1);
+			DecodeRXMessage(pHardware, (const unsigned char *)&lcmd.LIGHTING2, NULL, batterylevel);
 			return true;
 		}
-		else if ((devType == pTypeGeneral) && (subType == sTypePercentage))
+		else if (devType == pTypeGeneral)
 		{
-			unsigned long ID;
-			std::stringstream s_strid;
-			s_strid << std::hex << DeviceID;
-			s_strid >> ID;
-			_tGeneralDevice gDevice;
-			gDevice.subtype = sTypePercentage;
-			gDevice.id = unit;
-			gDevice.floatval1 = (float)atof(sValue.c_str());
-			gDevice.intval1 = static_cast<int>(ID);
-			DecodeRXMessage(pHardware, (const unsigned char *)&gDevice, NULL, -1);
-			return true;
+			if (subType == sTypePercentage)
+			{
+				_tGeneralDevice gDevice;
+				gDevice.subtype = sTypePercentage;
+				gDevice.id = unit;
+				gDevice.floatval1 = (float)atof(sValue.c_str());
+				gDevice.intval1 = static_cast<int>(ID);
+				DecodeRXMessage(pHardware, (const unsigned char *)&gDevice, NULL, batterylevel);
+				return true;
+			}
+			else if (subType == sTypeWaterflow)
+			{
+				unsigned long ID;
+				std::stringstream s_strid;
+				s_strid << std::hex << DeviceID;
+				s_strid >> ID;
+				_tGeneralDevice gDevice;
+				gDevice.subtype = sTypeWaterflow;
+				gDevice.id = unit;
+				gDevice.floatval1 = (float)atof(sValue.c_str());
+				gDevice.intval1 = static_cast<int>(ID);
+				DecodeRXMessage(pHardware, (const unsigned char *)&gDevice, NULL, batterylevel);
+				return true;
+			}
+			else if (subType == sTypeSoundLevel)
+			{
+				_tGeneralDevice gDevice;
+				gDevice.subtype = sTypeSoundLevel;
+				gDevice.id = unit;
+				gDevice.intval1 = static_cast<int>(ID);
+				gDevice.intval2 = atoi(sValue.c_str());
+				DecodeRXMessage(pHardware, (const unsigned char *)&gDevice, NULL, batterylevel);
+				return true;
+			}
 		}
-		else if ((devType == pTypeGeneral) && (subType == sTypeWaterflow))
+		else if ((devType == pTypeAirQuality) && (subType == sTypeVoltcraft))
 		{
-			unsigned long ID;
-			std::stringstream s_strid;
-			s_strid << std::hex << DeviceID;
-			s_strid >> ID;
-			_tGeneralDevice gDevice;
-			gDevice.subtype = sTypeWaterflow;
-			gDevice.id = unit;
-			gDevice.floatval1 = (float)atof(sValue.c_str());
-			gDevice.intval1 = static_cast<int>(ID);
-			DecodeRXMessage(pHardware, (const unsigned char *)&gDevice, NULL, -1);
-			return true;
+			std::vector<std::vector<std::string> > result;
+			result = m_sql.safe_query(
+				"SELECT ID,Name FROM DeviceStatus WHERE (HardwareID=%d AND DeviceID='%q' AND Unit=%d AND Type=%d AND SubType=%d)",
+				HardwareID, DeviceID.c_str(), unit, devType, subType);
+			if (!result.empty())
+			{
+				std::vector<std::string> sd = result[0];
+				unsigned long long dID = 0;
+				std::stringstream s_strid;
+				s_strid << sd[0];
+				s_strid >> dID;
+
+				m_notifications.CheckAndHandleNotification(dID, sd[1], devType, subType, NTYPE_USAGE, (const float)nValue);
+			}
 		}
 	}
 
