@@ -12,6 +12,7 @@
 #include <vector>
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include "connection_manager.hpp"
 #include "request_handler.hpp"
 #include "../main/localtime_r.h"
@@ -231,6 +232,13 @@ void connection::handle_read(const boost::system::error_code& error, std::size_t
 				reply::add_header_if_absent(&reply_, "Keep-Alive", ss.str());
 			}
 
+#ifdef WWW_ENABLE_SSL
+			_log.Log(LOG_STATUS, "%s -> \"%s %s HTTP/%d.%d\" %d %s", host_endpoint_.c_str(),
+					request_.method.c_str(),
+					request_.uri.c_str(),
+					request_.http_version_major, request_.http_version_minor,
+					reply_.status, boost::lexical_cast<std::string>(reply_.content.size()).c_str());
+#endif
 			status_ = WAITING_WRITE;
 
 			if (secure_) {
@@ -251,6 +259,10 @@ void connection::handle_read(const boost::system::error_code& error, std::size_t
 			keepalive_ = false;
 			reply_ = reply::stock_reply(reply::bad_request);
 
+#ifdef WWW_ENABLE_SSL
+			_log.Log(LOG_STATUS, "%s -> \"\" %d %s", host_endpoint_.c_str(),
+					reply_.status, boost::lexical_cast<std::string>(reply_.content.size()).c_str());
+#endif
 			status_ = WAITING_WRITE;
 
 			if (secure_) {
