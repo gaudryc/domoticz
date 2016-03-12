@@ -183,6 +183,7 @@ void signal_handler(int sig_num)
 	{
 #ifndef WIN32
 	case SIGHUP:
+		_log.Log(LOG_STATUS, "Domoticz received SIGHUP signal !...");
 		if (logfile!="")
 		{
 			_log.SetOutputFile(logfile.c_str());
