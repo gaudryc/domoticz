@@ -46,6 +46,7 @@
 
 #ifdef __gnu_linux__
 #include <execinfo.h>
+#include <cxxabi.h>
 static void dumpstack(void) {
 	// Notes :
 	// The following code does needs -rdynamic compile option.not print full backtrace.
@@ -53,15 +54,69 @@ static void dumpstack(void) {
 	// - compile with -g -rdynamic options
 	// - active core dump using "ulimit -c unlimited" before starting daemon
 	// - use gdb to analyze the core dump
-	void *addrs[128];
-	int n, count = backtrace(addrs, 128);
-	char** symbols = backtrace_symbols(addrs, count);
+	int max_frames = 63;
+	int stack_start_index = 0; // the first interesting stack (to bypass the call of the dumpstack function)
+	void *addrs[max_frames + 1];
+	int n, count = backtrace(addrs, sizeof(addrs) / sizeof(void*));
 
+	if (count == 0) {
+		_log.Log(LOG_ERROR, "  No backtrace found");
+		return;
+	}
+
+	char** symbols = backtrace_symbols(addrs, count);
 	if (symbols) {
-		for (n = 0; n < count; n++) {
+		for (n = stack_start_index; n < count; n++) {
 			_log.Log(LOG_ERROR, "  %s", symbols[n]);
 		}
+		_log.Log(LOG_ERROR, "  =====================");
+		size_t funcnamesize = 1024;
+		char funcname[1024];
+
+		// iterate over the returned symbol lines. skip the first, it is the address of this function.
+		for (unsigned int i = stack_start_index; i < count; i++) {
+			char* begin_name   = NULL;
+			char* begin_offset = NULL;
+			char* end_offset   = NULL;
+
+			// find parentheses and +address offset surrounding the mangled name
+			for (char *p = symbols[i]; *p; ++p) {
+				if (*p == '(') {
+					begin_name = p;
+				} else if (*p == '+') {
+					begin_offset = p;
+				} else if (*p == ')' && (begin_offset || begin_name)) {
+					end_offset = p;
+				}
+			}
+
+			if (begin_name && end_offset && (begin_name < end_offset)) {
+				*begin_name++   = '\0';
+				*end_offset++   = '\0';
+				if ( begin_offset ) {
+					*begin_offset++ = '\0';
+				}
+				// mangled name is now in [begin_name, begin_offset) and caller offset in [begin_offset, end_offset). now apply __cxa_demangle():
+				int status = 0;
+				char* ret = abi::__cxa_demangle(begin_name, funcname, &funcnamesize, &status);
+				char* fname = begin_name;
+				if (status == 0) {
+					fname = ret;
+				}
+
+				if (begin_offset) {
+					_log.Log(LOG_ERROR, "  %-30s ( %-40s	+ %-6s)	%s", symbols[i], fname, begin_offset, end_offset);
+				} else {
+					_log.Log(LOG_ERROR, "  %-30s ( %-40s	  %-6s)	%s", symbols[i], fname, "", end_offset);
+				}
+			} else {
+				// couldn't parse the line? print the whole line.
+				_log.Log(LOG_ERROR, "  %-40s", symbols[i]);
+			}
+		}
+
 		free(symbols);
+		_log.Log(LOG_ERROR, "  +++++++++++++++++++");
 	}
 }
 #else
