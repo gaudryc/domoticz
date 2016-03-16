@@ -9209,6 +9209,7 @@ void MainWorker::decode_General(const int HwdID, const _eHardwareTypes HwdType, 
 		(subType == sTypeBaro) ||
 		(subType == sTypeDistance) ||
 		(subType == sTypeSoilMoisture) ||
+		(subType == sTypeCustom) ||
 		(subType == sTypeKwh)
 		)
 	{
@@ -9369,6 +9370,14 @@ void MainWorker::decode_General(const int HwdID, const _eHardwareTypes HwdType, 
 		if (DevRowIdx == -1)
 			return;
 	}
+	else if (subType == sTypeCustom)
+	{
+		sprintf(szTmp, "%.4f", pMeter->floatval1);
+		DevRowIdx = m_sql.UpdateValue(HwdID, ID.c_str(), Unit, devType, subType, SignalLevel, BatteryLevel, cmnd, szTmp, procResult.DeviceName);
+		if (DevRowIdx == -1)
+			return;
+		m_notifications.CheckAndHandleNotification(DevRowIdx, procResult.DeviceName, devType, subType, NTYPE_USAGE, pMeter->floatval1);
+	}
 
 	if (m_verboselevel >= EVBL_ALL)
 	{
@@ -9471,6 +9480,11 @@ void MainWorker::decode_General(const int HwdID, const _eHardwareTypes HwdType, 
 		case sTypeAlert:
 			WriteMessage("subtype       = Alert");
 			sprintf(szTmp, "Alert = %d", pMeter->intval1);
+			WriteMessage(szTmp);
+			break;
+		case sTypeCustom:
+			WriteMessage("subtype       = Custom Sensor");
+			sprintf(szTmp, "Value = %g", pMeter->floatval1);
 			WriteMessage(szTmp);
 			break;
 		default:
@@ -12076,6 +12090,16 @@ bool MainWorker::UpdateDevice(const int HardwareID, const std::string &DeviceID,
 				gDevice.id = unit;
 				gDevice.intval1 = static_cast<int>(ID);
 				gDevice.intval2 = atoi(sValue.c_str());
+				DecodeRXMessage(pHardware, (const unsigned char *)&gDevice, NULL, batterylevel);
+				return true;
+			}
+			else if (subType == sTypeCustom)
+			{
+				_tGeneralDevice gDevice;
+				gDevice.subtype = sTypeCustom;
+				gDevice.id = unit;
+				gDevice.floatval1 = (float)atof(sValue.c_str());
+				gDevice.intval1 = static_cast<int>(ID);
 				DecodeRXMessage(pHardware, (const unsigned char *)&gDevice, NULL, batterylevel);
 				return true;
 			}
