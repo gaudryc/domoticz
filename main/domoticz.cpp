@@ -105,18 +105,18 @@ static void dumpstack(void) {
 				}
 
 				if (begin_offset) {
-					_log.Log(LOG_ERROR, "  %-30s ( %-40s	+ %-6s)	%s", symbols[i], fname, begin_offset, end_offset);
+					_log.Log(LOG_ERROR, "  %-30s ( %-40s    + %-6s) %s", symbols[i], fname, begin_offset, end_offset);
 				} else {
-					_log.Log(LOG_ERROR, "  %-30s ( %-40s	  %-6s)	%s", symbols[i], fname, "", end_offset);
+					_log.Log(LOG_ERROR, "  %-30s ( %-40s      %-6s) %s", symbols[i], fname, "", end_offset);
 				}
 			} else {
 				// couldn't parse the line? print the whole line.
 				_log.Log(LOG_ERROR, "  %-40s", symbols[i]);
 			}
 		}
+		_log.Log(LOG_ERROR, "  +++++++++++++++++++");
 
 		free(symbols);
-		_log.Log(LOG_ERROR, "  +++++++++++++++++++");
 	}
 }
 #else
