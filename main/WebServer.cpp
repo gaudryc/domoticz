@@ -7317,19 +7317,13 @@ namespace http {
 					if (!bDisplayHidden)
 					{
 						//Build a list of Hidden Devices
-						result = m_sql.safe_query("SELECT ID FROM Plans WHERE (Name=='$Hidden Devices')");
+						result = m_sql.safe_query("SELECT M.DeviceRowID FROM DeviceToPlansMap as M, Plans as P WHERE (M.PlanID==P.ID) AND (P.Name=='$Hidden Devices')");
 						if (result.size() > 0)
 						{
-							std::string pID = result[0][0];
-							result = m_sql.safe_query("SELECT DeviceRowID FROM DeviceToPlansMap WHERE (PlanID=='%q')",
-								pID.c_str());
-							if (result.size() > 0)
+							std::vector<std::vector<std::string> >::const_iterator ittP;
+							for (ittP = result.begin(); ittP != result.end(); ++ittP)
 							{
-								std::vector<std::vector<std::string> >::const_iterator ittP;
-								for (ittP = result.begin(); ittP != result.end(); ++ittP)
-								{
-									_HiddenDevices.insert(ittP[0][0]);
-								}
+								_HiddenDevices.insert(ittP[0][0]);
 							}
 						}
 						bAllowDeviceToBeHidden = true;
@@ -7415,19 +7409,13 @@ namespace http {
 					if (!bDisplayHidden)
 					{
 						//Build a list of Hidden Devices
-						result = m_sql.safe_query("SELECT ID FROM Plans WHERE (Name=='$Hidden Devices')");
+						result = m_sql.safe_query("SELECT M.DeviceRowID FROM DeviceToPlansMap as M, Plans as P WHERE (M.PlanID==P.ID) AND (P.Name=='$Hidden Devices')");
 						if (result.size() > 0)
 						{
-							std::string pID = result[0][0];
-							result = m_sql.safe_query("SELECT DeviceRowID FROM DeviceToPlansMap WHERE (PlanID=='%q')",
-								pID.c_str());
-							if (result.size() > 0)
+							std::vector<std::vector<std::string> >::const_iterator ittP;
+							for (ittP = result.begin(); ittP != result.end(); ++ittP)
 							{
-								std::vector<std::vector<std::string> >::const_iterator ittP;
-								for (ittP = result.begin(); ittP != result.end(); ++ittP)
-								{
-									_HiddenDevices.insert(ittP[0][0]);
-								}
+								_HiddenDevices.insert(ittP[0][0]);
 							}
 						}
 						bAllowDeviceToBeHidden = true;
