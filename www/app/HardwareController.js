@@ -135,6 +135,7 @@ define(['app'], function (app) {
 					text.indexOf("YouLess") == -1 &&
 					text.indexOf("Integra") == -1 &&
 					text.indexOf("ETH8020") == -1 &&
+					text.indexOf("Sterbox") == -1 &&
 					text.indexOf("Anna") == -1 &&
 					text.indexOf("KMTronic") == -1  &&
 					text.indexOf("MQTT") == -1 &&
@@ -222,6 +223,7 @@ define(['app'], function (app) {
 				(text.indexOf("Domoticz") >= 0) ||
 				(text.indexOf("Harmony") >= 0) ||
 				(text.indexOf("ETH8020") >= 0) ||
+				(text.indexOf("Sterbox") >= 0) ||
 				(text.indexOf("Anna") >= 0) ||
 				(text.indexOf("KMTronic") >= 0) ||
 				(text.indexOf("MQTT") >= 0) ||
@@ -649,6 +651,7 @@ define(['app'], function (app) {
 					(text.indexOf("LAN") >= 0 &&
 					text.indexOf("YouLess") == -1 &&
 					text.indexOf("ETH8020") == -1 &&
+					text.indexOf("Sterbox") == -1 &&
 					text.indexOf("Anna") == -1 &&
 					text.indexOf("KMTronic") == -1
 					&& text.indexOf("MQTT") == -1 &&
@@ -759,6 +762,7 @@ define(['app'], function (app) {
 				(text.indexOf("Domoticz") >= 0) ||
 				(text.indexOf("Harmony") >= 0) ||
 				(text.indexOf("ETH8020") >= 0) ||
+				(text.indexOf("Sterbox") >= 0) ||
 				(text.indexOf("Anna") >= 0) ||
 				(text.indexOf("KMTronic") >= 0) ||
 				(text.indexOf("MQTT") >= 0) ||
@@ -3466,6 +3470,59 @@ define(['app'], function (app) {
             $( "#dialog-createevohomesensor" ).dialog( "open" );
         }
 
+        CreateRFLinkDevices= function(idx,name)
+        {
+            $.devIdx=idx;
+            $("#dialog-createrflinkdevice #vsensoraxis").hide();
+            $("#dialog-createrflinkdevice #sensoraxis").val("");
+            $( "#dialog-createrflinkdevice" ).dialog({
+                  autoOpen: false,
+                  width: 420,
+                  height: 250,
+                  modal: true,
+                  resizable: false,
+                  buttons: {
+                      "OK": function() {
+                          var bValid = true;
+                          $( this ).dialog( "close" );
+                            var SensorName=$("#dialog-createrflinkdevice #sensorname").val();
+							if (SensorName=="")
+							{
+								ShowNotify($.t('Please enter a command!'), 2500, true);
+								return;
+							}
+                            $.ajax({
+                                 url: "json.htm?type=createrflinkdevice&idx=" + $.devIdx +
+									"&command=" + SensorName,
+                                 async: false,
+                                 dataType: 'json',
+                                 success: function(data) {
+                                    if (data.status == 'OK') {
+                                        ShowNotify($.t('Device created, it can be found in the devices tab!'), 2500);
+                                    }
+                                    else {
+                                        ShowNotify($.t('Problem creating Sensor!'), 2500, true);
+                                    }
+                                 },
+                                 error: function(){
+                                        HideNotify();
+                                        ShowNotify($.t('Problem creating Sensor!'), 2500, true);
+                                 }
+                            });
+                      },
+                      Cancel: function() {
+                          $( this ).dialog( "close" );
+                      }
+                  },
+                  close: function() {
+                    $( this ).dialog( "close" );
+                  }
+            });
+
+            $( "#dialog-createrflinkdevice" ).i18n();
+            $( "#dialog-createrflinkdevice" ).dialog( "open" );
+        }
+
 		function OnDummySensorTypeChange()
 		{
 			var stype=$("#dialog-createsensor #sensortype option:selected").val();
@@ -3684,6 +3741,9 @@ define(['app'], function (app) {
                     else if (HwTypeStr.indexOf("Dummy") >= 0) {
                         HwTypeStr+=' <span class="label label-info lcursor" onclick="CreateDummySensors(' + item.idx + ',\'' + item.Name + '\');">' + $.t("Create Virtual Sensors") + '</span>';
                     }
+                    else if (HwTypeStr.indexOf("RFLink") >= 0) {
+                        HwTypeStr+=' <span class="label label-info lcursor" onclick="CreateRFLinkDevices(' + item.idx + ',\'' + item.Name + '\');">' + $.t("Create RFLink Devices") + '</span>';
+                    }
                     else if (HwTypeStr.indexOf("Evohome") >= 0) {
                         if(HwTypeStr.indexOf("script") >= 0)
                             HwTypeStr+=' <span class="label label-info lcursor" onclick="CreateEvohomeSensors(' + item.idx + ',\'' + item.Name + '\');">' + $.t("Create Devices") + '</span>';
@@ -3879,6 +3939,7 @@ define(['app'], function (app) {
                             (data["Type"].indexOf("Nest Th") >= 0)||
                             (data["Type"].indexOf("PVOutput") >= 0)||
                             (data["Type"].indexOf("ETH8020") >= 0)||
+                            (data["Type"].indexOf("Sterbox") >= 0)||
                             (data["Type"].indexOf("Anna") >= 0)||
                             (data["Type"].indexOf("KMTronic") >= 0)||
                             (data["Type"].indexOf("MQTT") >= 0)||
@@ -4083,6 +4144,7 @@ define(['app'], function (app) {
             }
             if (
 				(text.indexOf("ETH8020") >= 0) ||
+				(text.indexOf("Sterbox") >= 0) ||
 				(text.indexOf("Anna") >= 0) ||
 				(text.indexOf("MQTT") >= 0) ||
 				(text.indexOf("KMTronic Gateway with LAN") >= 0) ||

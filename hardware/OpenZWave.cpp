@@ -5179,7 +5179,8 @@ namespace http {
 		}
 		void CWebServer::ZWaveCPGetStats(WebEmSession & session, const request& req, reply & rep)
 		{
-			//Crashes at OpenZWave::GetNodeStatistics::_data->m_sentTS = m_sentTS.GetAsString();
+			//Crashes at the moment at:
+			//string TimeStampImpl::GetAsString
 			/*
 			CDomoticzHardwareBase *pHardware = m_mainworker.GetHardware(m_ZW_Hwidx);
 			if (pHardware != NULL)
@@ -5188,7 +5189,7 @@ namespace http {
 			{
 			COpenZWave *pOZWHardware = (COpenZWave*)pHardware;
 			boost::lock_guard<boost::mutex> l(pOZWHardware->m_NotificationMutex);
-			reply::set_content(&rep, pOZWHardware->GetCPStats());
+			reply::set_content(&rep, pOZWHardware->m_ozwcp.GetCPStats());
 			reply::add_header_attachment(&rep, "stats.xml");
 			}
 			}
