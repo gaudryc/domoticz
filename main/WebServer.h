@@ -192,6 +192,8 @@ private:
 	void Cmd_AddSetpointTimer(WebEmSession & session, const request& req, Json::Value &root);
 	void Cmd_UpdateSetpointTimer(WebEmSession & session, const request& req, Json::Value &root);
 	void Cmd_DeleteSetpointTimer(WebEmSession & session, const request& req, Json::Value &root);
+	void Cmd_EnableSetpointTimer(WebEmSession & session, const request& req, Json::Value &root);
+	void Cmd_DisableSetpointTimer(WebEmSession & session, const request& req, Json::Value &root);
 	void Cmd_ClearSetpointTimers(WebEmSession & session, const request& req, Json::Value &root);
 	void Cmd_GetSerialDevices(WebEmSession & session, const request& req, Json::Value &root);
 	void Cmd_GetDevicesList(WebEmSession & session, const request& req, Json::Value &root);
@@ -258,6 +260,7 @@ private:
 	void RType_Scenes(WebEmSession & session, const request& req, Json::Value &root);
 	void RType_CreateEvohomeSensor(WebEmSession & session, const request& req, Json::Value &root);
 	void RType_BindEvohome(WebEmSession & session, const request& req, Json::Value &root);
+	void RType_CreateRFLinkDevice(WebEmSession & session, const request& req, Json::Value &root);
 #ifdef WITH_OPENZWAVE
 	//ZWave
 	void Cmd_ZWaveUpdateNode(WebEmSession & session, const request& req, Json::Value &root);
